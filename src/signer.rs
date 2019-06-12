@@ -85,7 +85,6 @@ where
 ///
 /// # Basic Usage
 /// ```rust
-/// use std::time::Duration;
 /// use itsdangerous::default_builder;
 ///
 /// // Create a signer using the default builder, and an arbitrary secret key.

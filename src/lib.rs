@@ -18,10 +18,10 @@
 //! // Create a signer using the default builder, and an arbitrary secret key.
 //! let signer = default_builder("secret key").build();
 //!
-//! // Sign an arbitrary string.
+//! // Sign an arbitrary string, and send it somewhere dangerous.
 //! let signed = signer.sign("hello world!");
 //!
-//! // Unsign the string and validate whether or not its expired.
+//! // Unsign the string and validate that it hasn't been tampered with.
 //! let unsigned = signer.unsign(&signed).expect("Signature was not valid");
 //! assert_eq!(unsigned, "hello world!");
 //! ```

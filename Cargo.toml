@@ -11,6 +11,7 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/discordapp/itsdangerous-rs"
 homepage = "https://github.com/discordapp/itsdangerous-rs"
+documentation = "https://docs.rs/itsdangerous"
 description = "Rust port of the popular itsdangerous python library for signing strings and sending them over untrusted channels."
 
 [dependencies]
