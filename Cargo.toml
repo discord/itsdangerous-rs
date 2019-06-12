@@ -3,6 +3,15 @@ name = "itsdangerous"
 version = "0.1.0"
 authors = ["Jake <jh@discordapp.com>"]
 edition = "2018"
+include = [
+    "src/*.rs",
+    "Cargo.toml",
+]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/discordapp/itsdangerous-rs"
+homepage = "https://github.com/discordapp/itsdangerous-rs"
+description = "Rust port of the popular itsdangerous python library for signing strings and sending them over untrusted channels."
 
 [dependencies]
 hmac = "0.7.0"

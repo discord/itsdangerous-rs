@@ -177,8 +177,8 @@ impl<'a> UnsignedValue<'a> {
 
 #[cfg(test)]
 mod tests {
-    extern crate test;
-    use test::Bencher;
+    // extern crate test;
+    // use test::Bencher;
 
     use crate::default_builder;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -218,18 +218,18 @@ mod tests {
             .is_ok());
     }
 
-    #[bench]
-    fn bench_sign(bench: &mut Bencher) {
-        let signer = default_builder("hello").build().into_timestamp_signer();
-        let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
+    // #[bench]
+    // fn bench_sign(bench: &mut Bencher) {
+    //     let signer = default_builder("hello").build().into_timestamp_signer();
+    //     let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
 
-        bench.iter(|| signer.sign_with_timestamp("hello world", timestamp))
-    }
+    //     bench.iter(|| signer.sign_with_timestamp("hello world", timestamp))
+    // }
 
-    #[bench]
-    fn bench_unsign(bench: &mut Bencher) {
-        let signer = default_builder("hello").build().into_timestamp_signer();
+    // #[bench]
+    // fn bench_unsign(bench: &mut Bencher) {
+    //     let signer = default_builder("hello").build().into_timestamp_signer();
 
-        bench.iter(|| signer.unsign("hello world.D-AM9g.T7AHtE1DsJn4dzUb-oeOwpWWoX8"))
-    }
+    //     bench.iter(|| signer.unsign("hello world.D-AM9g.T7AHtE1DsJn4dzUb-oeOwpWWoX8"))
+    // }
 }

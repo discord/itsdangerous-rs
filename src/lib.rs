@@ -1,5 +1,3 @@
-#![feature(test)]
-
 //! A rust re-implementation of the Python library [`itsdangerous`].
 //!
 //! Essentially, this crate provides various helpers to pass data to untrusted environments
@@ -29,6 +27,9 @@
 //! ```
 //!
 //! [`itsdangerous`]: https://github.com/pallets/itsdangerous/
+
+// TODO: Re-enable nightly benchmarks
+// #![feature(test)]
 
 // TODO: One day un-comment this.
 // #![warn(missing_docs)]

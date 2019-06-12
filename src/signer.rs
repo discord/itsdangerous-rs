@@ -218,8 +218,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate test;
-    use test::Bencher;
+    // extern crate test;
+    // use test::Bencher;
 
     #[test]
     fn test_signature_basic() {
@@ -265,15 +265,15 @@ mod tests {
         assert!(signer.unsign(".w").is_err());
     }
 
-    #[bench]
-    fn bench_unsign(bench: &mut Bencher) {
-        let signer = default_builder("hello").build();
-        bench.iter(|| signer.unsign("this is a test.hgGT0Zoara4L13FX3_xm-xmfa_0"))
-    }
+    // #[bench]
+    // fn bench_unsign(bench: &mut Bencher) {
+    //     let signer = default_builder("hello").build();
+    //     bench.iter(|| signer.unsign("this is a test.hgGT0Zoara4L13FX3_xm-xmfa_0"))
+    // }
 
-    #[bench]
-    fn bench_sign(bench: &mut Bencher) {
-        let signer = default_builder("hello").build();
-        bench.iter(|| signer.sign("this is a test"))
-    }
+    // #[bench]
+    // fn bench_sign(bench: &mut Bencher) {
+    //     let signer = default_builder("hello").build();
+    //     bench.iter(|| signer.sign("this is a test"))
+    // }
 }
