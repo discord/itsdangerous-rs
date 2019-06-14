@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-itsdangerous = "0.2"
+itsdangerous = "0.3"
 ```
 
 Next, get to signing some dangerous strings:
