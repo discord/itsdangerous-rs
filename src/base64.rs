@@ -85,6 +85,7 @@ where
 
 /// Decodes a base64 encoded string from `URLSafeBase64Encode` to a sized GenericArray.
 #[inline(always)]
+#[allow(dead_code)]
 pub(crate) fn decode_str<T>(input: &T) -> Result<Vec<u8>, DecodeError>
 where
     T: ?Sized + AsRef<[u8]>,
@@ -113,9 +114,9 @@ pub struct Base64SizedEncoder<N>(N);
 /// Implementation of the `Base64Sized` trait. This does the actual computation.
 ///
 /// A simple example is as follows:
-/// ```rust
-/// use itsdangerous::base64::{Base64Sized, Base64SizedEncoder};
-/// use hmac::digest::generic_array::*;
+/// ```rust,compile_fail
+/// use crate::base64::{Base64Sized, Base64SizedEncoder};
+/// use generic_array::*;
 ///
 /// let arr = arr![u8; 1, 2, 3];
 /// let result = Base64SizedEncoder::encode(arr);
