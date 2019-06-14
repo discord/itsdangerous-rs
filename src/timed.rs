@@ -6,27 +6,6 @@ use crate::error::BadTimedSignature;
 use crate::timestamp;
 use crate::{GetSigner, Signer, TimestampSigner};
 
-/// A TimestampSigner wraps an inner Signer, giving it the ability to dish
-/// out signatures with timestamps.
-///
-/// # Basic Usage
-/// ```rust
-/// use std::time::Duration;
-/// use itsdangerous::{default_builder, TimestampSigner};
-///
-/// // Create a signer using the default builder, and an arbitrary secret key.
-/// let signer = default_builder("secret key").build().into_timestamp_signer();
-///
-/// // Sign an arbitrary string.
-/// let signed = signer.sign("hello world!");
-///
-/// // Unsign the string and validate whether or not its expired.
-/// let unsigned = signer.unsign(&signed).expect("Signature was not valid");
-/// let value = unsigned
-///     .value_if_not_expired(Duration::from_secs(60))
-///     .expect("Signature was expired");
-/// assert_eq!(value, "hello world!");
-/// ```
 pub struct TimestampSignerImpl<TSigner>(TSigner);
 
 impl<TSigner> TimestampSignerImpl<TSigner>

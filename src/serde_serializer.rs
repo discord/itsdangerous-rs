@@ -38,16 +38,7 @@ impl Encoding for URLSafeEncoding {
     fn decode<'a>(&self, encoded_input: String) -> Result<String, PayloadError> {
         // TODO: Handle decompression from... you know... python land.
         let decoded = base64::decode_str(&encoded_input)?;
-        String::from_utf8(decoded)
-            .map_err(|e| {
-                let err = e.utf8_error();
-                let bytes = e.as_bytes();
-                PayloadError::Base64(base64::DecodeError::InvalidByte(
-                    err.valid_up_to(),
-                    bytes[err.valid_up_to()],
-                ))
-            })
-            .map(|e| e.into())
+        Ok(String::from_utf8(decoded).map_err(|e| e.utf8_error())?)
     }
 }
 

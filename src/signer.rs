@@ -78,27 +78,6 @@ where
     }
 }
 
-/// This struct can sign and unsign bytes, validating the signature provided.
-///
-/// A salt can be used to namespace the hash, so that a signed string is only
-/// valid for a given namespace. Leaving this at the default value or re-using a salt value
-/// across different parts of your application where the same signed value in one part can
-/// mean something different in another part is a security risk.
-///
-/// # Basic Usage
-/// ```rust
-/// use itsdangerous::{default_builder, Signer};
-///
-/// // Create a signer using the default builder, and an arbitrary secret key.
-/// let signer = default_builder("secret key").build();
-///
-/// // Sign an arbitrary string.
-/// let signed = signer.sign("hello world!");
-///
-/// // Unsign the string and validate whether or not its expired.
-/// let unsigned = signer.unsign(&signed).expect("Signature was not valid");
-/// assert_eq!(unsigned, "hello world!");
-/// ```
 pub struct SignerImpl<Algorithm, DerivedKeySize, SignatureEncoder>
 where
     DerivedKeySize: ArrayLength<u8>,
@@ -119,12 +98,6 @@ where
     /// to do signing with timestamps!
     pub fn into_timestamp_signer(self) -> impl TimestampSigner {
         TimestampSignerImpl::with_signer(self)
-    }
-
-    /// Gets the signature for a given value.
-    #[inline(always)]
-    pub(crate) fn get_signature(&self, value: &[u8]) -> Signature<Algorithm::OutputSize> {
-        Algorithm::get_signature(self.derived_key.as_slice(), value)
     }
 
     /// Given a base64-encoded signature, attempt to decode it and convert it

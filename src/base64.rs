@@ -13,8 +13,8 @@ static BASE64_ALPHABET: &'static str =
 /// A trait that allows a type to be safely encoded as a url-safe
 /// basea64 string.
 pub trait URLSafeBase64Encode: Sized {
+    #[cfg(test)]
     fn base64_encode(self) -> String {
-        // XX: This is not optimal, but we are going to kill this func soon.
         let mut target = String::new();
         self.base64_encode_str(&mut target);
         target

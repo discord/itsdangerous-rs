@@ -1,14 +1,15 @@
-use std::error;
-use std::fmt;
 use std::time::{Duration, SystemTime};
+use std::{error, fmt, str};
 
 use crate::base64;
 use crate::Seperator;
 
 #[derive(Debug)]
 pub enum PayloadError {
+    #[cfg(feature = "serializer")]
     Serde(serde_json::Error),
     Base64(base64::DecodeError),
+    Utf8Error(str::Utf8Error),
 }
 
 #[derive(Debug)]
@@ -241,8 +242,16 @@ impl From<base64::DecodeError> for PayloadError {
     }
 }
 
+#[cfg(feature = "serializer")]
 impl From<serde_json::Error> for PayloadError {
     fn from(error: serde_json::Error) -> Self {
         PayloadError::Serde(error)
+    }
+}
+
+#[cfg(feature = "serializer")]
+impl From<str::Utf8Error> for PayloadError {
+    fn from(error: str::Utf8Error) -> Self {
+        PayloadError::Utf8Error(error)
     }
 }

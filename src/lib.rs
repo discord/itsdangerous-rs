@@ -41,10 +41,11 @@ pub mod key_derivation;
 pub mod seperator;
 pub mod signer;
 pub mod timed;
-// TODO: Feature flag.
-pub mod serde_serializer;
 mod timestamp;
 pub mod traits;
+
+#[cfg(feature = "serializer")]
+pub mod serde_serializer;
 
 pub use error::{
     BadSignature, BadTimedSignature, InvalidSeperator, PayloadError, TimestampExpired,

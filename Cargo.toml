@@ -14,11 +14,14 @@ homepage = "https://github.com/discordapp/itsdangerous-rs"
 documentation = "https://docs.rs/itsdangerous"
 description = "Rust port of the popular itsdangerous python library for signing strings and sending them over untrusted channels."
 
+[features]
+serializer = ["serde", "serde_json"]
+
 [dependencies]
 hmac = "0.7.0"
 sha-1 = "0.8.1"
 base64 = "0.10.1"
 generic-array = "0.12.0"
 typenum = "1.10.0"
-serde = "1.0"
-serde_json = "1.0"
+serde = { version = "1.0", optional = true }
+serde_json = { version = "1.0", optional = true }

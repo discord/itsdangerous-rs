@@ -7,6 +7,27 @@ use crate::algorithm::{Signature, Signer as AlgorithmSigner};
 use crate::error::BadSignature;
 use crate::{BadTimedSignature, Seperator, UnsignedValue};
 
+/// A signer can sign and unsign bytes, validating the signature provided.
+///
+/// A salt can be used to namespace the hash, so that a signed string is only
+/// valid for a given namespace. Leaving this at the default value or re-using a salt value
+/// across different parts of your application where the same signed value in one part can
+/// mean something different in another part is a security risk.
+///
+/// # Basic Usage
+/// ```rust
+/// use itsdangerous::{default_builder, Signer};
+///
+/// // Create a signer using the default builder, and an arbitrary secret key.
+/// let signer = default_builder("secret key").build();
+///
+/// // Sign an arbitrary string.
+/// let signed = signer.sign("hello world!");
+///
+/// // Unsign the string and validate whether or not its expired.
+/// let unsigned = signer.unsign(&signed).expect("Signature was not valid");
+/// assert_eq!(unsigned, "hello world!");
+/// ```
 pub trait Signer {
     /// Signs the given string.
     fn sign<S: AsRef<str>>(&self, value: S) -> String;
@@ -47,6 +68,27 @@ pub trait GetSigner {
     }
 }
 
+/// A TimestampSigner wraps an inner Signer, giving it the ability to dish
+/// out signatures with timestamps.
+///
+/// # Basic Usage
+/// ```rust
+/// use std::time::Duration;
+/// use itsdangerous::{default_builder, TimestampSigner};
+///
+/// // Create a signer using the default builder, and an arbitrary secret key.
+/// let signer = default_builder("secret key").build().into_timestamp_signer();
+///
+/// // Sign an arbitrary string.
+/// let signed = signer.sign("hello world!");
+///
+/// // Unsign the string and validate whether or not its expired.
+/// let unsigned = signer.unsign(&signed).expect("Signature was not valid");
+/// let value = unsigned
+///     .value_if_not_expired(Duration::from_secs(60))
+///     .expect("Signature was expired");
+/// assert_eq!(value, "hello world!");
+/// ```
 pub trait TimestampSigner {
     type Signer: Signer;
 
