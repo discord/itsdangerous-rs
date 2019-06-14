@@ -26,7 +26,7 @@ pub struct TimedSerializerImpl<TSigner, TEncoding> {
 pub fn serializer_with_signer<TSigner, TEncoding>(
     signer: TSigner,
     encoding: TEncoding,
-) -> impl Serializer
+) -> SerializerImpl<TSigner, TEncoding>
 where
     TSigner: Signer,
     TEncoding: Encoding,
@@ -37,7 +37,7 @@ where
 pub fn timed_serializer_with_signer<TSigner, TEncoding>(
     signer: TSigner,
     encoding: TEncoding,
-) -> impl TimedSerializer
+) -> TimedSerializerImpl<TSigner, TEncoding>
 where
     TSigner: TimestampSigner,
     TEncoding: Encoding,
