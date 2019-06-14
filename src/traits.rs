@@ -29,8 +29,6 @@ use crate::{BadTimedSignature, Seperator, UnsignedValue};
 /// assert_eq!(unsigned, "hello world!");
 /// ```
 pub trait Signer {
-    type TimestampSigner: TimestampSigner;
-
     /// Signs the given string.
     fn sign<S: AsRef<str>>(&self, value: S) -> String;
 
@@ -55,10 +53,6 @@ pub trait Signer {
     /// Gets the output size in bytes of the base-64 encoded signature part that this
     /// signer will emit.
     fn signature_output_size(&self) -> usize;
-
-    /// Converts this [`Signer`] into a [`TimestampSigner`], giving it the ability
-    /// to do signing with timestamps!
-    fn into_timestamp_signer(self) -> Self::TimestampSigner;
 }
 
 pub trait GetSigner {
@@ -80,7 +74,7 @@ pub trait GetSigner {
 /// # Basic Usage
 /// ```rust
 /// use std::time::Duration;
-/// use itsdangerous::{default_builder, Signer, TimestampSigner};
+/// use itsdangerous::{default_builder, Signer, TimestampSigner, IntoTimestampSigner};
 ///
 /// // Create a signer using the default builder, and an arbitrary secret key.
 /// let signer = default_builder("secret key").build().into_timestamp_signer();
@@ -96,23 +90,7 @@ pub trait GetSigner {
 /// assert_eq!(value, "hello world!");
 /// ```
 pub trait TimestampSigner {
-    type Signer: Signer;
-
-    fn seperator(&self) -> Seperator {
-        self.as_signer().seperator()
-    }
-
-    /// Returns a reference to the underlying [`Signer`] if you wish to use its methods.
-    ///
-    /// # Example
-    /// ```rust
-    /// use itsdangerous::{default_builder, TimestampSigner, Signer};
-    ///
-    /// let timestamp_signer = default_builder("hello world").build().into_timestamp_signer();
-    /// let signer = timestamp_signer.as_signer();
-    /// let signer = signer.sign("hello without a timestamp!");
-    /// ```
-    fn as_signer(&self) -> &Self::Signer;
+    fn seperator(&self) -> Seperator;
 
     /// Signs a value with an arbitrary timestamp.
     fn sign_with_timestamp<S: AsRef<str>>(&self, value: S, timestamp: SystemTime) -> String;
@@ -133,4 +111,28 @@ pub trait TimestampSigner {
     /// [`sign`]: TimestampSigner::sign
     /// [`sign_with_timestamp`]: TimestampSigner::sign_with_timestamp
     fn unsign<'a>(&'a self, value: &'a str) -> Result<UnsignedValue, BadTimedSignature<'a>>;
+}
+
+pub trait IntoTimestampSigner {
+    type TimestampSigner: TimestampSigner;
+
+    /// Converts this [`Signer`] into a [`TimestampSigner`], giving it the ability
+    /// to do signing with timestamps!
+    fn into_timestamp_signer(self) -> Self::TimestampSigner;
+}
+
+pub trait AsSigner {
+    type Signer: Signer;
+
+    /// Returns a reference to the underlying [`Signer`] if you wish to use its methods.
+    ///
+    /// # Example
+    /// ```rust
+    /// use itsdangerous::{default_builder, TimestampSigner, IntoTimestampSigner, Signer, AsSigner};
+    ///
+    /// let timestamp_signer = default_builder("hello world").build().into_timestamp_signer();
+    /// let signer = timestamp_signer.as_signer();
+    /// let signer = signer.sign("hello without a timestamp!");
+    /// ```
+    fn as_signer(&self) -> &Self::Signer;
 }

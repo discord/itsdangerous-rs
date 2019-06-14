@@ -10,8 +10,7 @@ use crate::base64::{self, Base64Sized, Base64SizedEncoder, URLSafeBase64Encode};
 use crate::key_derivation;
 use crate::timed::TimestampSignerImpl;
 use crate::traits::GetSigner;
-use crate::Signer;
-use crate::{BadSignature, Seperator};
+use crate::{BadSignature, IntoTimestampSigner, Seperator, Signer};
 
 static DEFAULT_SALT: Cow<'static, str> = Cow::Borrowed("itsdangerous.Signer");
 
@@ -130,14 +129,6 @@ where
     DerivedKeySize: ArrayLength<u8>,
     SignatureEncoder: Base64Sized,
 {
-    type TimestampSigner = TimestampSignerImpl<Self>;
-
-    /// Converts this [`Signer`] into a [`TimestampSigner`], giving it the ability
-    /// to do signing with timestamps!
-    fn into_timestamp_signer(self) -> Self::TimestampSigner {
-        TimestampSignerImpl::with_signer(self)
-    }
-
     fn signature_output_size(&self) -> usize {
         SignatureEncoder::OutputSize::USIZE
     }
@@ -195,6 +186,22 @@ where
     #[inline(always)]
     fn get_signer(&self) -> Self::Signer {
         Self::Signer::new(self.derived_key.as_slice())
+    }
+}
+
+impl<Algorithm, DerivedKeySize, SignatureEncoder> IntoTimestampSigner
+    for SignerImpl<Algorithm, DerivedKeySize, SignatureEncoder>
+where
+    Algorithm: algorithm::SigningAlgorithm,
+    DerivedKeySize: ArrayLength<u8>,
+    SignatureEncoder: Base64Sized,
+{
+    type TimestampSigner = TimestampSignerImpl<Self>;
+
+    /// Converts this [`Signer`] into a [`TimestampSigner`], giving it the ability
+    /// to do signing with timestamps!
+    fn into_timestamp_signer(self) -> Self::TimestampSigner {
+        TimestampSignerImpl::with_signer(self)
     }
 }
 

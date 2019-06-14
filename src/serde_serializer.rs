@@ -6,14 +6,44 @@ use serde_json;
 
 use crate::error::{BadSignature, BadTimedSignature, PayloadError, TimestampExpired};
 use crate::timestamp;
-use crate::{base64, Seperator, Signer, TimestampSigner};
-
-pub trait Encoding {
-    fn encode<'a>(&self, serialized_input: String) -> String;
-    fn decode<'a>(&self, encoded_input: String) -> Result<String, PayloadError>;
-}
+use crate::{
+    base64, AsSigner, Encoding, Seperator, Serializer, Signer, TimedSerializer, TimestampSigner,
+};
 
 pub struct NullEncoding;
+pub struct URLSafeEncoding;
+
+pub struct SerializerImpl<TSigner, TEncoding> {
+    signer: TSigner,
+    encoding: TEncoding,
+}
+
+pub struct TimedSerializerImpl<TSigner, TEncoding> {
+    signer: TSigner,
+    encoding: TEncoding,
+}
+
+pub fn serializer_with_signer<TSigner, TEncoding>(
+    signer: TSigner,
+    encoding: TEncoding,
+) -> impl Serializer
+where
+    TSigner: Signer,
+    TEncoding: Encoding,
+{
+    SerializerImpl { signer, encoding }
+}
+
+pub fn timed_serializer_with_signer<TSigner, TEncoding>(
+    signer: TSigner,
+    encoding: TEncoding,
+) -> impl TimedSerializer
+where
+    TSigner: TimestampSigner,
+    TEncoding: Encoding,
+{
+    TimedSerializerImpl { signer, encoding }
+}
 
 impl Encoding for NullEncoding {
     fn encode<'a>(&self, serialized_input: String) -> String {
@@ -24,8 +54,6 @@ impl Encoding for NullEncoding {
         Ok(encoded_input)
     }
 }
-
-pub struct URLSafeEncoding;
 
 impl Encoding for URLSafeEncoding {
     fn encode<'a>(&self, serialized_input: String) -> String {
@@ -56,54 +84,33 @@ fn deserialize<'a, T: DeserializeOwned, Encoding: self::Encoding>(
     })
 }
 
-pub struct Serializer<TSigner, TEncoding> {
-    signer: TSigner,
-    encoding: TEncoding,
-}
-
-impl<TSigner, TEncoding> Serializer<TSigner, TEncoding>
+impl<TSigner, TEncoding> Serializer for SerializerImpl<TSigner, TEncoding>
 where
     TSigner: Signer,
     TEncoding: Encoding,
 {
-    pub fn with_signer(signer: TSigner, encoding: TEncoding) -> Self {
-        Self { signer, encoding }
-    }
-
-    pub fn sign<T: Serialize>(&self, value: &T) -> serde_json::Result<String> {
+    fn sign<T: Serialize>(&self, value: &T) -> serde_json::Result<String> {
         let serialized = serde_json::to_string(value)?;
         let encoded = self.encoding.encode(serialized);
         Ok(self.signer.sign(encoded))
     }
 
-    pub fn unsign<'a, T: DeserializeOwned>(
-        &'a self,
-        value: &'a str,
-    ) -> Result<T, BadSignature<'a>> {
+    fn unsign<'a, T: DeserializeOwned>(&'a self, value: &'a str) -> Result<T, BadSignature<'a>> {
         let value = self.signer.unsign(value)?;
         deserialize(value, &self.encoding)
     }
 }
 
-pub struct TimedSerializer<TSigner, TEncoding> {
-    signer: TSigner,
-    encoding: TEncoding,
-}
-
-impl<TSigner, TEncoding> TimedSerializer<TSigner, TEncoding>
+impl<TSigner, TEncoding> TimedSerializer for TimedSerializerImpl<TSigner, TEncoding>
 where
     TSigner: TimestampSigner,
     TEncoding: Encoding,
 {
-    pub fn with_signer(signer: TSigner, encoding: TEncoding) -> Self {
-        Self { signer, encoding }
-    }
-
-    pub fn sign<T: Serialize>(&self, value: &T) -> serde_json::Result<String> {
+    fn sign<T: Serialize>(&self, value: &T) -> serde_json::Result<String> {
         self.sign_with_timestamp(value, SystemTime::now())
     }
 
-    pub fn sign_with_timestamp<T: Serialize>(
+    fn sign_with_timestamp<T: Serialize>(
         &self,
         value: &T,
         timestamp: SystemTime,
@@ -113,16 +120,16 @@ where
         Ok(self.signer.sign_with_timestamp(encoded, timestamp))
     }
 
-    pub fn unsign<'a, T: DeserializeOwned>(
+    fn unsign<'a, T: DeserializeOwned>(
         &'a self,
         value: &'a str,
-    ) -> Result<UnsignedValue<T>, BadTimedSignature<'a>> {
+    ) -> Result<UnsignedTimedSerializerValue<T>, BadTimedSignature<'a>> {
         let value = self.signer.unsign(value)?;
         let timestamp = value.timestamp();
         let value = value.value();
         let deserialized_value = deserialize(value, &self.encoding)?;
 
-        Ok(UnsignedValue {
+        Ok(UnsignedTimedSerializerValue {
             value: deserialized_value,
             timestamp,
         })
@@ -130,12 +137,12 @@ where
 }
 
 /// Represents a value + timestamp that has been successfully unsigned by [`TimedSerializer::unsign`].
-pub struct UnsignedValue<T> {
+pub struct UnsignedTimedSerializerValue<T> {
     value: T,
     timestamp: SystemTime,
 }
 
-impl<T> UnsignedValue<T> {
+impl<T> UnsignedTimedSerializerValue<T> {
     /// The value that has been [`unsigned`]. This value is safe to use and
     /// was part of a payload that has been successfully [`unsigned`].
     ///
@@ -171,7 +178,7 @@ impl<T> UnsignedValue<T> {
     }
 }
 
-impl<T> Deref for UnsignedValue<T> {
+impl<T> Deref for UnsignedTimedSerializerValue<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.value
@@ -253,10 +260,10 @@ impl<'a, T: DeserializeOwned> UnverifiedTimedValue<'a, T> {
         self.unverified_timestamp
     }
 
-    pub fn verify<TSigner: TimestampSigner>(
+    pub fn verify<TSigner: TimestampSigner + AsSigner>(
         self,
         timestamp_signer: &TSigner,
-    ) -> Result<UnsignedValue<T>, BadTimedSignature<'a>> {
+    ) -> Result<UnsignedTimedSerializerValue<T>, BadTimedSignature<'a>> {
         let value = self.unverified_raw_value;
         let signature = self.unverified_signature;
 
@@ -264,7 +271,7 @@ impl<'a, T: DeserializeOwned> UnverifiedTimedValue<'a, T> {
             .as_signer()
             .verify_encoded_signature(value.as_bytes(), signature.as_bytes())
         {
-            Ok(UnsignedValue {
+            Ok(UnsignedTimedSerializerValue {
                 value: self.unverified_value,
                 timestamp: self.unverified_timestamp,
             })
@@ -279,7 +286,7 @@ mod tests {
     use std::time::UNIX_EPOCH;
 
     use super::*;
-    use crate::default_builder;
+    use crate::{default_builder, IntoTimestampSigner};
     #[test]
 
     fn test_null_encoding() {
@@ -301,7 +308,7 @@ mod tests {
     #[test]
     fn test_sign_null_encoding() {
         let signer = default_builder("hello world").build();
-        let serializer = Serializer::with_signer(signer, NullEncoding);
+        let serializer = serializer_with_signer(signer, NullEncoding);
         let signed = "[1,2,3].bq_ST5hV4J35lKdovyr_ng-ZIxU";
         assert_eq!(serializer.sign(&vec![1, 2, 3]).unwrap(), signed);
         assert_eq!(serializer.unsign::<Vec<u8>>(signed).unwrap(), vec![1, 2, 3]);
@@ -332,7 +339,7 @@ mod tests {
     #[test]
     fn test_sign_url_safe_encoding() {
         let signer = default_builder("hello world").build();
-        let serializer = Serializer::with_signer(signer, URLSafeEncoding);
+        let serializer = serializer_with_signer(signer, URLSafeEncoding);
         let signed = "WzEsMiwzXQ.ohh92zNcvFVoWHrPf5uumLp6mbQ";
         assert_eq!(serializer.sign(&vec![1, 2, 3]).unwrap(), signed);
         assert_eq!(serializer.unsign::<Vec<u8>>(signed).unwrap(), vec![1, 2, 3]);
@@ -343,7 +350,7 @@ mod tests {
         let signer = default_builder("hello world")
             .build()
             .into_timestamp_signer();
-        let serializer = TimedSerializer::with_signer(signer, NullEncoding);
+        let serializer = timed_serializer_with_signer(signer, NullEncoding);
         let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
         let signed = "[1,2,3].D-AM9g.nHmuOEE3v5DuwHEW9noSBOvExO0";
         assert_eq!(

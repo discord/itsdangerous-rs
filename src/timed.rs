@@ -5,7 +5,7 @@ use crate::base64::URLSafeBase64Encode;
 use crate::error::BadTimedSignature;
 use crate::timestamp;
 use crate::traits::GetSigner;
-use crate::{Signer, TimestampSigner};
+use crate::{AsSigner, Seperator, Signer, TimestampSigner};
 
 pub struct TimestampSignerImpl<TSigner>(TSigner);
 
@@ -33,20 +33,8 @@ impl<TSigner> TimestampSigner for TimestampSignerImpl<TSigner>
 where
     TSigner: Signer + GetSigner,
 {
-    type Signer = TSigner;
-
-    /// Returns a reference to the underlying [`Signer`] if you wish to use its methods.
-    ///
-    /// # Example
-    /// ```rust
-    /// use itsdangerous::{default_builder, TimestampSigner, Signer};
-    ///
-    /// let timestamp_signer = default_builder("hello world").build().into_timestamp_signer();
-    /// let signer = timestamp_signer.as_signer();
-    /// let signer = signer.sign("hello without a timestamp!");
-    /// ```
-    fn as_signer(&self) -> &Self::Signer {
-        &self.0
+    fn seperator(&self) -> Seperator {
+        self.0.seperator()
     }
 
     /// Signs a value with an arbitrary timestamp.
@@ -105,6 +93,17 @@ where
     }
 }
 
+impl<TSigner> AsSigner for TimestampSignerImpl<TSigner>
+where
+    TSigner: Signer,
+{
+    type Signer = TSigner;
+
+    fn as_signer(&self) -> &Self::Signer {
+        &self.0
+    }
+}
+
 /// Represents a value + timestamp that has been successfully unsigned by [`TimestampSigner::unsign`].
 pub struct UnsignedValue<'a> {
     value: &'a str,
@@ -153,7 +152,7 @@ mod tests {
     // extern crate test;
     // use test::Bencher;
 
-    use crate::{default_builder, Signer, TimestampSigner};
+    use crate::{default_builder, IntoTimestampSigner, TimestampSigner};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     #[test]
