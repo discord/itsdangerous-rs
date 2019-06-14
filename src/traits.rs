@@ -29,6 +29,8 @@ use crate::{BadTimedSignature, Seperator, UnsignedValue};
 /// assert_eq!(unsigned, "hello world!");
 /// ```
 pub trait Signer {
+    type TimestampSigner: TimestampSigner;
+
     /// Signs the given string.
     fn sign<S: AsRef<str>>(&self, value: S) -> String;
 
@@ -53,6 +55,10 @@ pub trait Signer {
     /// Gets the output size in bytes of the base-64 encoded signature part that this
     /// signer will emit.
     fn signature_output_size(&self) -> usize;
+
+    /// Converts this [`Signer`] into a [`TimestampSigner`], giving it the ability
+    /// to do signing with timestamps!
+    fn into_timestamp_signer(self) -> Self::TimestampSigner;
 }
 
 pub trait GetSigner {
@@ -74,7 +80,7 @@ pub trait GetSigner {
 /// # Basic Usage
 /// ```rust
 /// use std::time::Duration;
-/// use itsdangerous::{default_builder, TimestampSigner};
+/// use itsdangerous::{default_builder, Signer, TimestampSigner};
 ///
 /// // Create a signer using the default builder, and an arbitrary secret key.
 /// let signer = default_builder("secret key").build().into_timestamp_signer();

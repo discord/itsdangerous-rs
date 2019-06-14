@@ -25,6 +25,7 @@ pub trait URLSafeBase64Encode: Sized {
 
 /// Encodes a string as url safe base64.
 #[inline(always)]
+#[allow(dead_code)]
 pub(crate) fn encode<T>(input: &T) -> String
 where
     T: ?Sized + AsRef<[u8]>,
@@ -34,6 +35,7 @@ where
 
 /// Encodes a string as url safe base64.
 #[inline(always)]
+#[allow(dead_code)]
 pub(crate) fn encode_slice<T>(input: &T, target: &mut [u8]) -> usize
 where
     T: ?Sized + AsRef<[u8]>,

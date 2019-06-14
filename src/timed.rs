@@ -4,7 +4,8 @@ use crate::algorithm::Signer as AlgorithmSigner;
 use crate::base64::URLSafeBase64Encode;
 use crate::error::BadTimedSignature;
 use crate::timestamp;
-use crate::{GetSigner, Signer, TimestampSigner};
+use crate::traits::GetSigner;
+use crate::{Signer, TimestampSigner};
 
 pub struct TimestampSignerImpl<TSigner>(TSigner);
 
@@ -152,7 +153,7 @@ mod tests {
     // extern crate test;
     // use test::Bencher;
 
-    use crate::{default_builder, TimestampSigner};
+    use crate::{default_builder, Signer, TimestampSigner};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     #[test]

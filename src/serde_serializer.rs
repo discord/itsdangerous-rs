@@ -1,12 +1,9 @@
 use std::ops::Deref;
 use std::time::{Duration, SystemTime};
 
-use generic_array::ArrayLength;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 
-use crate::algorithm::SigningAlgorithm;
-use crate::base64::Base64Sized;
 use crate::error::{BadSignature, BadTimedSignature, PayloadError, TimestampExpired};
 use crate::timestamp;
 use crate::{base64, Seperator, Signer, TimestampSigner};
@@ -189,9 +186,9 @@ pub struct UnverifiedValue<'a, T> {
 }
 
 impl<'a, T: DeserializeOwned> UnverifiedValue<'a, T> {
-    pub fn from_str<Encoding: self::Encoding>(
+    pub fn from_str<TEncoding: Encoding>(
         seperator: Seperator,
-        encoding: Encoding,
+        encoding: TEncoding,
         input: &'a str,
     ) -> Result<Self, BadSignature> {
         let (unverified_raw_value, unverified_signature) = seperator.split(input)?;
@@ -209,15 +206,7 @@ impl<'a, T: DeserializeOwned> UnverifiedValue<'a, T> {
         &self.unverified_value
     }
 
-    pub fn verify<Algorithm, DerivedKeySize, SignatureEncoder>(
-        self,
-        signer: &crate::signer::SignerImpl<Algorithm, DerivedKeySize, SignatureEncoder>,
-    ) -> Result<T, BadSignature<'a>>
-    where
-        Algorithm: SigningAlgorithm,
-        DerivedKeySize: ArrayLength<u8>,
-        SignatureEncoder: Base64Sized,
-    {
+    pub fn verify<TSigner: Signer>(self, signer: &TSigner) -> Result<T, BadSignature<'a>> {
         let value = self.unverified_raw_value;
         let signature = self.unverified_signature;
 
@@ -237,9 +226,9 @@ pub struct UnverifiedTimedValue<'a, T> {
 }
 
 impl<'a, T: DeserializeOwned> UnverifiedTimedValue<'a, T> {
-    pub fn from_str<Encoding: self::Encoding>(
+    pub fn from_str<TEncoding: Encoding>(
         seperator: Seperator,
-        encoding: Encoding,
+        encoding: TEncoding,
         input: &'a str,
     ) -> Result<Self, BadTimedSignature> {
         let (unverified_raw_value, unverified_signature) = seperator.split(input)?;

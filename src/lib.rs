@@ -34,15 +34,16 @@
 // TODO: One day un-comment this.
 // #![warn(missing_docs)]
 
-pub mod algorithm;
-pub mod base64;
-pub mod error;
-pub mod key_derivation;
-pub mod seperator;
-pub mod signer;
-pub mod timed;
+mod base64;
+mod error;
+mod seperator;
+mod signer;
+mod timed;
 mod timestamp;
-pub mod traits;
+mod traits;
+
+pub mod algorithm;
+pub mod key_derivation;
 
 #[cfg(feature = "serializer")]
 pub mod serde_serializer;
@@ -53,4 +54,4 @@ pub use error::{
 pub use seperator::Seperator;
 pub use signer::{default_builder, SignerBuilder};
 pub use timed::UnsignedValue;
-pub use traits::{GetSigner, Signer, TimestampSigner};
+pub use traits::{Signer, TimestampSigner};
