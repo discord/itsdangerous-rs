@@ -88,7 +88,7 @@ impl<'a> error::Error for BadSignature<'a> {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }
@@ -132,7 +132,7 @@ impl<'a> error::Error for BadTimedSignature<'a> {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }
@@ -168,7 +168,7 @@ impl error::Error for InvalidSeperator {
         "invalid seperator"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }
@@ -184,7 +184,7 @@ impl error::Error for SeperatorNotFound {
         "seperator not foundr"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }
@@ -230,7 +230,7 @@ impl<T> error::Error for TimestampExpired<T> {
         "timestamp expired"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
 }

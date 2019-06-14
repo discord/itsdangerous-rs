@@ -68,26 +68,17 @@ fn deserialize<'a, T: DeserializeOwned, Encoding: self::Encoding>(
     })
 }
 
-pub struct Serializer<Algorithm, DerivedKeySize, SignatureEncoder, Encoding>
-where
-    DerivedKeySize: ArrayLength<u8>,
-{
-    signer: Signer<Algorithm, DerivedKeySize, SignatureEncoder>,
-    encoding: Encoding,
+pub struct Serializer<TSigner, TEncoding> {
+    signer: TSigner,
+    encoding: TEncoding,
 }
 
-impl<Algorithm, DerivedKeySize, SignatureEncoder, Encoding>
-    Serializer<Algorithm, DerivedKeySize, SignatureEncoder, Encoding>
+impl<TSigner, TEncoding> Serializer<TSigner, TEncoding>
 where
-    Algorithm: SigningAlgorithm,
-    DerivedKeySize: ArrayLength<u8>,
-    SignatureEncoder: Base64Sized,
-    Encoding: self::Encoding,
+    TSigner: Signer,
+    TEncoding: Encoding,
 {
-    pub fn with_signer(
-        signer: Signer<Algorithm, DerivedKeySize, SignatureEncoder>,
-        encoding: Encoding,
-    ) -> Self {
+    pub fn with_signer(signer: TSigner, encoding: TEncoding) -> Self {
         Self { signer, encoding }
     }
 
@@ -106,26 +97,17 @@ where
     }
 }
 
-pub struct TimedSerializer<Algorithm, DerivedKeySize, SignatureEncoder, Encoding>
-where
-    DerivedKeySize: ArrayLength<u8>,
-{
-    signer: TimestampSigner<Algorithm, DerivedKeySize, SignatureEncoder>,
-    encoding: Encoding,
+pub struct TimedSerializer<TSigner, TEncoding> {
+    signer: TSigner,
+    encoding: TEncoding,
 }
 
-impl<Algorithm, DerivedKeySize, SignatureEncoder, Encoding>
-    TimedSerializer<Algorithm, DerivedKeySize, SignatureEncoder, Encoding>
+impl<TSigner, TEncoding> TimedSerializer<TSigner, TEncoding>
 where
-    Algorithm: SigningAlgorithm,
-    DerivedKeySize: ArrayLength<u8>,
-    SignatureEncoder: Base64Sized,
-    Encoding: self::Encoding,
+    TSigner: TimestampSigner,
+    TEncoding: Encoding,
 {
-    pub fn with_signer(
-        signer: TimestampSigner<Algorithm, DerivedKeySize, SignatureEncoder>,
-        encoding: Encoding,
-    ) -> Self {
+    pub fn with_signer(signer: TSigner, encoding: TEncoding) -> Self {
         Self { signer, encoding }
     }
 
@@ -238,7 +220,7 @@ impl<'a, T: DeserializeOwned> UnverifiedValue<'a, T> {
 
     pub fn verify<Algorithm, DerivedKeySize, SignatureEncoder>(
         self,
-        signer: &Signer<Algorithm, DerivedKeySize, SignatureEncoder>,
+        signer: &crate::signer::SignerImpl<Algorithm, DerivedKeySize, SignatureEncoder>,
     ) -> Result<T, BadSignature<'a>>
     where
         Algorithm: SigningAlgorithm,
@@ -291,15 +273,10 @@ impl<'a, T: DeserializeOwned> UnverifiedTimedValue<'a, T> {
         self.unverified_timestamp
     }
 
-    pub fn verify<Algorithm, DerivedKeySize, SignatureEncoder>(
+    pub fn verify<TSigner: TimestampSigner>(
         self,
-        timestamp_signer: &TimestampSigner<Algorithm, DerivedKeySize, SignatureEncoder>,
-    ) -> Result<UnsignedValue<T>, BadTimedSignature<'a>>
-    where
-        Algorithm: SigningAlgorithm,
-        DerivedKeySize: ArrayLength<u8>,
-        SignatureEncoder: Base64Sized,
-    {
+        timestamp_signer: &TSigner,
+    ) -> Result<UnsignedValue<T>, BadTimedSignature<'a>> {
         let value = self.unverified_raw_value;
         let signature = self.unverified_signature;
 
@@ -355,7 +332,7 @@ mod tests {
         let signer = default_builder("hello world").build();
         let signed = "[1,2,3].bq_ST5hV4J35lKdovyr_ng-ZIxU";
         let unverified_value: UnverifiedValue<Vec<u8>> =
-            UnverifiedValue::from_str(signer.seperator(), NullEncoding, signed).unwrap();
+            UnverifiedValue::from_str(signer.seperator, NullEncoding, signed).unwrap();
         let expected = vec![1, 2, 3];
         assert_eq!(unverified_value.unverified_value(), &expected);
         assert_eq!(unverified_value.verify(&signer).unwrap(), expected);
@@ -366,7 +343,7 @@ mod tests {
         let signer = default_builder("not the right key lol").build();
         let signed = "[1,2,3].bq_ST5hV4J35lKdovyr_ng-ZIxU";
         let unverified_value: UnverifiedValue<Vec<u8>> =
-            UnverifiedValue::from_str(signer.seperator(), NullEncoding, signed).unwrap();
+            UnverifiedValue::from_str(signer.seperator, NullEncoding, signed).unwrap();
         let expected = vec![1, 2, 3];
         assert_eq!(unverified_value.unverified_value(), &expected);
         assert!(unverified_value.verify(&signer).is_err());

@@ -13,7 +13,7 @@
 //! ## Basic Example
 //! ```rust
 //! use std::time::Duration;
-//! use itsdangerous::default_builder;
+//! use itsdangerous::{default_builder, Signer};
 //!
 //! // Create a signer using the default builder, and an arbitrary secret key.
 //! let signer = default_builder("secret key").build();
@@ -44,10 +44,12 @@ pub mod timed;
 // TODO: Feature flag.
 pub mod serde_serializer;
 mod timestamp;
+pub mod traits;
 
 pub use error::{
     BadSignature, BadTimedSignature, InvalidSeperator, PayloadError, TimestampExpired,
 };
 pub use seperator::Seperator;
-pub use signer::{default_builder, Signer, SignerBuilder};
-pub use timed::TimestampSigner;
+pub use signer::{default_builder, SignerBuilder};
+pub use timed::UnsignedValue;
+pub use traits::{GetSigner, Signer, TimestampSigner};

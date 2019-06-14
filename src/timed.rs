@@ -1,13 +1,10 @@
 use std::time::{Duration, SystemTime};
 
-use generic_array::ArrayLength;
-use typenum::Unsigned;
-
-use crate::algorithm::{Signer as AlgorithmSigner, SigningAlgorithm};
-use crate::base64::{Base64Sized, URLSafeBase64Encode};
+use crate::algorithm::Signer as AlgorithmSigner;
+use crate::base64::URLSafeBase64Encode;
 use crate::error::BadTimedSignature;
 use crate::timestamp;
-use crate::{Seperator, Signer};
+use crate::{GetSigner, Signer, TimestampSigner};
 
 /// A TimestampSigner wraps an inner Signer, giving it the ability to dish
 /// out signatures with timestamps.
@@ -15,7 +12,7 @@ use crate::{Seperator, Signer};
 /// # Basic Usage
 /// ```rust
 /// use std::time::Duration;
-/// use itsdangerous::default_builder;
+/// use itsdangerous::{default_builder, TimestampSigner};
 ///
 /// // Create a signer using the default builder, and an arbitrary secret key.
 /// let signer = default_builder("secret key").build().into_timestamp_signer();
@@ -30,47 +27,53 @@ use crate::{Seperator, Signer};
 ///     .expect("Signature was expired");
 /// assert_eq!(value, "hello world!");
 /// ```
-pub struct TimestampSigner<Algorithm, DerivedKeySize, SignatureEncoder>(
-    Signer<Algorithm, DerivedKeySize, SignatureEncoder>,
-)
-where
-    DerivedKeySize: ArrayLength<u8>;
+pub struct TimestampSignerImpl<TSigner>(TSigner);
 
-impl<Algorithm, DerivedKeySize, SignatureEncoder>
-    TimestampSigner<Algorithm, DerivedKeySize, SignatureEncoder>
+impl<TSigner> TimestampSignerImpl<TSigner>
 where
-    Algorithm: SigningAlgorithm,
-    DerivedKeySize: ArrayLength<u8>,
-    SignatureEncoder: Base64Sized,
+    TSigner: Signer + GetSigner,
 {
-    pub(crate) fn with_signer(signer: Signer<Algorithm, DerivedKeySize, SignatureEncoder>) -> Self {
+    pub(crate) fn with_signer(signer: TSigner) -> Self {
         Self(signer)
     }
+
+    pub(crate) fn split<'a>(
+        &'a self,
+        value: &'a str,
+    ) -> Result<(&'a str, &'a str), BadTimedSignature<'a>> {
+        // Then we split it again, to extract the value & timestamp.
+        self.0
+            .seperator()
+            .split(value)
+            .map_err(|_| BadTimedSignature::TimestampMissing { value })
+    }
+}
+
+impl<TSigner> TimestampSigner for TimestampSignerImpl<TSigner>
+where
+    TSigner: Signer + GetSigner,
+{
+    type Signer = TSigner;
 
     /// Returns a reference to the underlying [`Signer`] if you wish to use its methods.
     ///
     /// # Example
     /// ```rust
-    /// use itsdangerous::default_builder;
+    /// use itsdangerous::{default_builder, TimestampSigner, Signer};
     ///
     /// let timestamp_signer = default_builder("hello world").build().into_timestamp_signer();
     /// let signer = timestamp_signer.as_signer();
     /// let signer = signer.sign("hello without a timestamp!");
     /// ```
-    pub fn as_signer(&self) -> &Signer<Algorithm, DerivedKeySize, SignatureEncoder> {
+    fn as_signer(&self) -> &Self::Signer {
         &self.0
     }
 
-    #[inline(always)]
-    pub fn seperator(&self) -> Seperator {
-        self.0.seperator()
-    }
-
     /// Signs a value with an arbitrary timestamp.
-    pub fn sign_with_timestamp<S: AsRef<str>>(&self, value: S, timestamp: SystemTime) -> String {
+    fn sign_with_timestamp<S: AsRef<str>>(&self, value: S, timestamp: SystemTime) -> String {
         let value = value.as_ref();
         let encoded_timestamp = timestamp::encode(timestamp);
-        let seperator = self.seperator().0;
+        let seperator = self.0.seperator().0;
 
         // Generate the signature.
         let signature = self
@@ -83,7 +86,7 @@ where
 
         // Generate the signed output string.
         let mut output = String::with_capacity(
-            value.len() + 1 + encoded_timestamp.length() + 1 + SignatureEncoder::OutputSize::USIZE,
+            value.len() + 1 + encoded_timestamp.length() + 1 + self.0.signature_output_size(),
         );
 
         output.push_str(value);
@@ -96,7 +99,7 @@ where
     }
 
     /// Signs a value using the current system timestamp (as provided by [`SystemTime::now`]).
-    pub fn sign<S: AsRef<str>>(&self, value: S) -> String {
+    fn sign<S: AsRef<str>>(&self, value: S) -> String {
         self.sign_with_timestamp(value, SystemTime::now())
     }
 
@@ -112,23 +115,13 @@ where
     /// [`&str`]: std::str
     /// [`sign`]: TimestampSigner::sign
     /// [`sign_with_timestamp`]: TimestampSigner::sign_with_timestamp
-    pub fn unsign<'a>(&'a self, value: &'a str) -> Result<UnsignedValue, BadTimedSignature<'a>> {
+    fn unsign<'a>(&'a self, value: &'a str) -> Result<UnsignedValue, BadTimedSignature<'a>> {
         // The base unsigner gives us {value}{sep}{timestamp}.
         let value = self.0.unsign(value)?;
         let (value, timestamp) = self.split(value)?;
         let timestamp = timestamp::decode(timestamp)?;
 
         Ok(UnsignedValue { timestamp, value })
-    }
-
-    pub(crate) fn split<'a>(
-        &'a self,
-        value: &'a str,
-    ) -> Result<(&'a str, &'a str), BadTimedSignature<'a>> {
-        // Then we split it again, to extract the value & timestamp.
-        self.seperator()
-            .split(value)
-            .map_err(|_| BadTimedSignature::TimestampMissing { value })
     }
 }
 
@@ -180,7 +173,7 @@ mod tests {
     // extern crate test;
     // use test::Bencher;
 
-    use crate::default_builder;
+    use crate::{default_builder, TimestampSigner};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     #[test]
