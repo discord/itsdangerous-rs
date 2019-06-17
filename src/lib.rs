@@ -46,6 +46,8 @@ pub mod algorithm;
 pub mod key_derivation;
 
 #[cfg(feature = "serializer")]
+mod multi_serializer;
+#[cfg(feature = "serializer")]
 mod serde_serializer;
 #[cfg(feature = "serializer")]
 mod serializer_traits;
@@ -58,6 +60,8 @@ pub use signer::{default_builder, SignerBuilder};
 pub use timed::UnsignedValue;
 pub use traits::{AsSigner, IntoTimestampSigner, Signer, TimestampSigner};
 
+#[cfg(feature = "serializer")]
+pub use multi_serializer::MultiSerializer;
 #[cfg(feature = "serializer")]
 pub use serde_serializer::{
     serializer_with_signer, timed_serializer_with_signer, NullEncoding, URLSafeEncoding,

@@ -5,6 +5,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 
 use crate::error::{BadSignature, BadTimedSignature, PayloadError, TimestampExpired};
+use crate::serializer_traits::UnsignToString;
 use crate::timestamp;
 use crate::{
     base64, AsSigner, Encoding, Seperator, Serializer, Signer, TimedSerializer, TimestampSigner,
@@ -98,6 +99,22 @@ where
     fn unsign<'a, T: DeserializeOwned>(&'a self, value: &'a str) -> Result<T, BadSignature<'a>> {
         let value = self.signer.unsign(value)?;
         deserialize(value, &self.encoding)
+    }
+}
+
+impl<TSigner, TEncoding> UnsignToString for SerializerImpl<TSigner, TEncoding>
+where
+    TSigner: Signer,
+    TEncoding: Encoding,
+{
+    fn unsign_to_string<'a>(&'a self, value: &'a str) -> Result<String, BadSignature<'a>> {
+        let value = self.signer.unsign(value)?;
+        self.encoding
+            .decode(value.to_string())
+            .map_err(|e| BadSignature::PayloadInvalid {
+                value,
+                error: e.into(),
+            })
     }
 }
 

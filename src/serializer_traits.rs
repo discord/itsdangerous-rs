@@ -27,3 +27,7 @@ pub trait TimedSerializer {
         value: &'a str,
     ) -> Result<UnsignedTimedSerializerValue<T>, BadTimedSignature<'a>>;
 }
+
+pub trait UnsignToString {
+    fn unsign_to_string<'a>(&'a self, value: &'a str) -> Result<String, BadSignature<'a>>;
+}
