@@ -2,7 +2,7 @@ use std::time::{Duration, SystemTime};
 use std::{error, fmt, str};
 
 use crate::base64;
-use crate::Seperator;
+use crate::Separator;
 
 #[derive(Debug)]
 pub enum PayloadError {
@@ -13,16 +13,16 @@ pub enum PayloadError {
 }
 
 #[derive(Debug)]
-pub struct SeperatorNotFound {
-    pub seperator: Seperator,
+pub struct SeparatorNotFound {
+    pub separator: Separator,
 }
 
 /// Errors that can occur while unsigning a "signed value".
 #[derive(Debug)]
 pub enum BadSignature<'a> {
     /// A string was provided to unsign, but it did not contain
-    /// the expected seperator.
-    SeperatorNotFound { seperator: Seperator },
+    /// the expected separator.
+    SeparatorNotFound { separator: Separator },
     /// The signature did not match what we expected it to be.
     SignatureMismatch { signature: &'a str, value: &'a str },
     /// The payload is invalid, e.g. it cannot be parsed.
@@ -33,8 +33,8 @@ pub enum BadSignature<'a> {
 #[derive(Debug)]
 pub enum BadTimedSignature<'a> {
     /// A string was provided to unsign, but it did not contain
-    /// the expected seperator.
-    SeperatorNotFound { seperator: Seperator },
+    /// the expected separator.
+    SeparatorNotFound { separator: Separator },
     /// The signature did not match what we expected it to be.
     SignatureMismatch { signature: &'a str, value: &'a str },
     /// The payload is invalid, e.g. it cannot be parsed.
@@ -59,16 +59,16 @@ pub struct TimestampExpired<T> {
     pub value: T,
 }
 
-/// Error that occurs when trying to construct a Seperator with
+/// Error that occurs when trying to construct a Separator with
 /// a char is in the base64 url-safe alphabet.
 #[derive(Debug)]
-pub struct InvalidSeperator(pub char);
+pub struct InvalidSeparator(pub char);
 
 impl<'a> fmt::Display for BadSignature<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            BadSignature::SeperatorNotFound { seperator } => {
-                write!(f, "Seperator {:?} not found in value.", seperator.0)
+            BadSignature::SeparatorNotFound { separator } => {
+                write!(f, "Separator {:?} not found in value.", separator.0)
             }
             BadSignature::SignatureMismatch { signature, .. } => {
                 write!(f, "Signature {:?} does not match.", signature)
@@ -83,7 +83,7 @@ impl<'a> fmt::Display for BadSignature<'a> {
 impl<'a> error::Error for BadSignature<'a> {
     fn description(&self) -> &str {
         match *self {
-            BadSignature::SeperatorNotFound { .. } => "seperator not found",
+            BadSignature::SeparatorNotFound { .. } => "separator not found",
             BadSignature::SignatureMismatch { .. } => "signature does not match",
             BadSignature::PayloadInvalid { .. } => "payload invalid",
         }
@@ -97,8 +97,8 @@ impl<'a> error::Error for BadSignature<'a> {
 impl<'a> fmt::Display for BadTimedSignature<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            BadTimedSignature::SeperatorNotFound { seperator, .. } => {
-                write!(f, "Seperator {:?} not found in value.", seperator.0)
+            BadTimedSignature::SeparatorNotFound { separator, .. } => {
+                write!(f, "Separator {:?} not found in value.", separator.0)
             }
             BadTimedSignature::SignatureMismatch { signature, .. } => {
                 write!(f, "Signature {:?} does not match.", signature)
@@ -124,7 +124,7 @@ impl<'a> fmt::Display for BadTimedSignature<'a> {
 impl<'a> error::Error for BadTimedSignature<'a> {
     fn description(&self) -> &str {
         match *self {
-            BadTimedSignature::SeperatorNotFound { .. } => "seperator not found",
+            BadTimedSignature::SeparatorNotFound { .. } => "separator not found",
             BadTimedSignature::SignatureMismatch { .. } => "signature does not match",
             BadTimedSignature::TimestampMissing { .. } => "timestamp missing",
             BadTimedSignature::TimestampInvalid { .. } => "timestamp invalid",
@@ -141,8 +141,8 @@ impl<'a> error::Error for BadTimedSignature<'a> {
 impl<'a> From<BadSignature<'a>> for BadTimedSignature<'a> {
     fn from(bad_signature: BadSignature<'a>) -> Self {
         match bad_signature {
-            BadSignature::SeperatorNotFound { seperator } => {
-                BadTimedSignature::SeperatorNotFound { seperator }
+            BadSignature::SeparatorNotFound { separator } => {
+                BadTimedSignature::SeparatorNotFound { separator }
             }
             BadSignature::SignatureMismatch { signature, value } => {
                 BadTimedSignature::SignatureMismatch { signature, value }
@@ -154,19 +154,19 @@ impl<'a> From<BadSignature<'a>> for BadTimedSignature<'a> {
     }
 }
 
-impl fmt::Display for InvalidSeperator {
+impl fmt::Display for InvalidSeparator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Seperator {:?} is in the base64 alphabet, and thus cannot be used",
+            "Separator {:?} is in the base64 alphabet, and thus cannot be used",
             self.0
         )
     }
 }
 
-impl error::Error for InvalidSeperator {
+impl error::Error for InvalidSeparator {
     fn description(&self) -> &str {
-        "invalid seperator"
+        "invalid separator"
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
@@ -174,15 +174,15 @@ impl error::Error for InvalidSeperator {
     }
 }
 
-impl fmt::Display for SeperatorNotFound {
+impl fmt::Display for SeparatorNotFound {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Seperator {:?} not found in value.", self.seperator)
+        write!(f, "Separator {:?} not found in value.", self.separator)
     }
 }
 
-impl error::Error for SeperatorNotFound {
+impl error::Error for SeparatorNotFound {
     fn description(&self) -> &str {
-        "seperator not foundr"
+        "separator not foundr"
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
@@ -190,18 +190,18 @@ impl error::Error for SeperatorNotFound {
     }
 }
 
-impl<'a> From<SeperatorNotFound> for BadSignature<'a> {
-    fn from(error: SeperatorNotFound) -> Self {
-        BadSignature::SeperatorNotFound {
-            seperator: error.seperator,
+impl<'a> From<SeparatorNotFound> for BadSignature<'a> {
+    fn from(error: SeparatorNotFound) -> Self {
+        BadSignature::SeparatorNotFound {
+            separator: error.separator,
         }
     }
 }
 
-impl<'a> From<SeperatorNotFound> for BadTimedSignature<'a> {
-    fn from(error: SeperatorNotFound) -> Self {
-        BadTimedSignature::SeperatorNotFound {
-            seperator: error.seperator,
+impl<'a> From<SeparatorNotFound> for BadTimedSignature<'a> {
+    fn from(error: SeparatorNotFound) -> Self {
+        BadTimedSignature::SeparatorNotFound {
+            separator: error.separator,
         }
     }
 }
