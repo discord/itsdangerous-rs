@@ -5,6 +5,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 
 use crate::error::{BadSignature, BadTimedSignature, PayloadError, TimestampExpired};
+use crate::serializer_traits::UnsignToString;
 use crate::timestamp;
 use crate::{
     base64, AsSigner, Encoding, Separator, Serializer, Signer, TimedSerializer, TimestampSigner,
@@ -101,6 +102,33 @@ where
     }
 }
 
+impl<TSigner, TEncoding> UnsignToString for SerializerImpl<TSigner, TEncoding>
+where
+    TSigner: Signer,
+    TEncoding: Encoding,
+{
+    fn unsign_to_string<'a>(&'a self, value: &'a str) -> Result<String, BadSignature<'a>> {
+        let value = self.signer.unsign(value)?;
+        self.encoding
+            .decode(value.to_string())
+            .map_err(|e| BadSignature::PayloadInvalid {
+                value,
+                error: e.into(),
+            })
+    }
+}
+
+impl<TSigner, TEncoding> AsSigner for SerializerImpl<TSigner, TEncoding>
+where
+    TSigner: Signer,
+{
+    type Signer = TSigner;
+
+    fn as_signer(&self) -> &Self::Signer {
+        &self.signer
+    }
+}
+
 impl<TSigner, TEncoding> TimedSerializer for TimedSerializerImpl<TSigner, TEncoding>
 where
     TSigner: TimestampSigner,
@@ -156,7 +184,7 @@ impl<T> UnsignedTimedSerializerValue<T> {
     /// For conveniently unwrapping the value and enforcing a max age,
     /// consider using [`value_if_not_expired`].
     ///
-    /// [`value_if_not_expired`]: UnsignedValue::value_if_not_expired
+    /// [`value_if_not_expired`]: UnsignedTimedSerializerValue::value_if_not_expired
     pub fn timestamp(&self) -> SystemTime {
         self.timestamp
     }
@@ -185,7 +213,39 @@ impl<T> Deref for UnsignedTimedSerializerValue<T> {
     }
 }
 
-// TODO: Doc
+/// An [`UnverifiedValue`] is just that. A deserialized value that has not been verified against
+/// against a signer. This is useful if you want to deserialize something without verifying
+/// the signature, because you might need data in the unsigned value in order to look up the
+/// signing key in a database somewhere.
+///
+/// # Example
+/// ```rust
+/// use itsdangerous::*;
+///
+/// // One could imagine this looking up a signing key from a databse or something.
+/// fn get_signing_key(user_id: u64) -> &'static str {
+///     match user_id {
+///         1 => "hello",
+///         2 => "world",
+///         _ => panic!("unexpected user {:?}", user_id)
+///     }
+/// }
+///
+/// fn get_serializer(user_id: u64) -> impl Serializer + AsSigner {
+///     serializer_with_signer(default_builder(get_signing_key(user_id)).build(), URLSafeEncoding)
+/// }
+///
+/// // Let's create a token for a user with id 1.
+/// let token = get_serializer(1).sign(&1).unwrap();
+///
+/// // Now, let's say we've gotten that token from somewhere. We need to deserialize it, in order
+/// // to determine the signing key to use. `from_str` will fail if deserialization fails, not if
+/// // the signature is invalid.
+/// let unverified_user_id = UnverifiedValue::<u64>::from_str(Separator::default(), URLSafeEncoding, &token).unwrap();
+/// let serializer = get_serializer(*unverified_user_id.unverified_value());
+/// // We can now attempt to verify the token with a given serializer.
+/// assert_eq!(unverified_user_id.verify(&serializer).unwrap(), 1);
+/// ```
 pub struct UnverifiedValue<'a, T> {
     unverified_value: T,
     unverified_raw_value: &'a str,
@@ -213,11 +273,14 @@ impl<'a, T: DeserializeOwned> UnverifiedValue<'a, T> {
         &self.unverified_value
     }
 
-    pub fn verify<TSigner: Signer>(self, signer: &TSigner) -> Result<T, BadSignature<'a>> {
+    pub fn verify<TSigner: AsSigner>(self, signer: &TSigner) -> Result<T, BadSignature<'a>> {
         let value = self.unverified_raw_value;
         let signature = self.unverified_signature;
 
-        if signer.verify_encoded_signature(value.as_bytes(), signature.as_bytes()) {
+        if signer
+            .as_signer()
+            .verify_encoded_signature(value.as_bytes(), signature.as_bytes())
+        {
             Ok(self.unverified_value)
         } else {
             Err(BadSignature::SignatureMismatch { signature, value })
@@ -379,5 +442,28 @@ mod tests {
         assert_eq!(unverified_value.verify(&signer).unwrap().value(), expected);
     }
 
-    // TODO: Test `value_if_not_expired` & co...
+    #[test]
+    fn test_unverified_timed_value_if_not_expired() {
+        let signer = default_builder("hello world")
+            .build()
+            .into_timestamp_signer();
+        let serializer = timed_serializer_with_signer(signer, NullEncoding);
+        let timestamp = SystemTime::now() - Duration::from_secs(30);
+        let signed = serializer
+            .sign_with_timestamp(&vec![1, 2, 3], timestamp)
+            .unwrap();
+
+        let unsigned = serializer.unsign::<Vec<u8>>(&signed).unwrap();
+        assert!(unsigned
+            .value_if_not_expired(Duration::from_secs(15))
+            .is_err());
+
+        let unsigned = serializer.unsign::<Vec<u8>>(&signed).unwrap();
+        assert_eq!(
+            unsigned
+                .value_if_not_expired(Duration::from_secs(60))
+                .unwrap(),
+            vec![1, 2, 3]
+        );
+    }
 }

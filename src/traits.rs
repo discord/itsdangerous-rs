@@ -121,6 +121,7 @@ pub trait IntoTimestampSigner {
     fn into_timestamp_signer(self) -> Self::TimestampSigner;
 }
 
+/// Returns a referenec to the underlying [`Signer`].
 pub trait AsSigner {
     type Signer: Signer;
 
