@@ -241,7 +241,7 @@ impl<T> Deref for UnsignedTimedSerializerValue<T> {
 /// // Now, let's say we've gotten that token from somewhere. We need to deserialize it, in order
 /// // to determine the signing key to use. `from_str` will fail if deserialization fails, not if
 /// // the signature is invalid.
-/// let unverified_user_id = UnverifiedValue::<u64>::from_str(Seperator::default(), URLSafeEncoding, &token).unwrap();
+/// let unverified_user_id = UnverifiedValue::<u64>::from_str(Separator::default(), URLSafeEncoding, &token).unwrap();
 /// let serializer = get_serializer(*unverified_user_id.unverified_value());
 /// // We can now attempt to verify the token with a given serializer.
 /// assert_eq!(unverified_user_id.verify(&serializer).unwrap(), 1);
