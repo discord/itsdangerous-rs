@@ -8,7 +8,7 @@ use crate::error::{BadSignature, BadTimedSignature, PayloadError, TimestampExpir
 use crate::serializer_traits::UnsignToString;
 use crate::timestamp;
 use crate::{
-    base64, AsSigner, Encoding, Seperator, Serializer, Signer, TimedSerializer, TimestampSigner,
+    base64, AsSigner, Encoding, Separator, Serializer, Signer, TimedSerializer, TimestampSigner,
 };
 
 pub struct NullEncoding;
@@ -254,11 +254,11 @@ pub struct UnverifiedValue<'a, T> {
 
 impl<'a, T: DeserializeOwned> UnverifiedValue<'a, T> {
     pub fn from_str<TEncoding: Encoding>(
-        seperator: Seperator,
+        separator: Separator,
         encoding: TEncoding,
         input: &'a str,
     ) -> Result<Self, BadSignature> {
-        let (unverified_raw_value, unverified_signature) = seperator.split(input)?;
+        let (unverified_raw_value, unverified_signature) = separator.split(input)?;
         let unverified_value = deserialize(unverified_raw_value, &encoding)?;
 
         Ok(UnverifiedValue {
@@ -297,13 +297,13 @@ pub struct UnverifiedTimedValue<'a, T> {
 
 impl<'a, T: DeserializeOwned> UnverifiedTimedValue<'a, T> {
     pub fn from_str<TEncoding: Encoding>(
-        seperator: Seperator,
+        separator: Separator,
         encoding: TEncoding,
         input: &'a str,
     ) -> Result<Self, BadTimedSignature> {
-        let (unverified_raw_value, unverified_signature) = seperator.split(input)?;
+        let (unverified_raw_value, unverified_signature) = separator.split(input)?;
         let (unverified_raw_serialized_value, unverified_timestamp) =
-            seperator.split(unverified_raw_value)?;
+            separator.split(unverified_raw_value)?;
         let unverified_timestamp = timestamp::decode(unverified_timestamp)?;
         let unverified_value = deserialize(unverified_raw_serialized_value, &encoding)?;
 
@@ -382,7 +382,7 @@ mod tests {
         let signer = default_builder("hello world").build();
         let signed = "[1,2,3].bq_ST5hV4J35lKdovyr_ng-ZIxU";
         let unverified_value: UnverifiedValue<Vec<u8>> =
-            UnverifiedValue::from_str(signer.seperator, NullEncoding, signed).unwrap();
+            UnverifiedValue::from_str(signer.separator, NullEncoding, signed).unwrap();
         let expected = vec![1, 2, 3];
         assert_eq!(unverified_value.unverified_value(), &expected);
         assert_eq!(unverified_value.verify(&signer).unwrap(), expected);
@@ -393,7 +393,7 @@ mod tests {
         let signer = default_builder("not the right key lol").build();
         let signed = "[1,2,3].bq_ST5hV4J35lKdovyr_ng-ZIxU";
         let unverified_value: UnverifiedValue<Vec<u8>> =
-            UnverifiedValue::from_str(signer.seperator, NullEncoding, signed).unwrap();
+            UnverifiedValue::from_str(signer.separator, NullEncoding, signed).unwrap();
         let expected = vec![1, 2, 3];
         assert_eq!(unverified_value.unverified_value(), &expected);
         assert!(unverified_value.verify(&signer).is_err());
@@ -435,7 +435,7 @@ mod tests {
         let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
         let signed = "[1,2,3].D-AM9g.nHmuOEE3v5DuwHEW9noSBOvExO0";
         let unverified_value: UnverifiedTimedValue<Vec<u8>> =
-            UnverifiedTimedValue::from_str(signer.seperator(), NullEncoding, signed).unwrap();
+            UnverifiedTimedValue::from_str(signer.separator(), NullEncoding, signed).unwrap();
         let expected = vec![1, 2, 3];
         assert_eq!(unverified_value.unverified_timestamp(), timestamp);
         assert_eq!(unverified_value.unverified_value(), &expected);

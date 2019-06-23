@@ -10,14 +10,14 @@ use crate::base64::{self, Base64Sized, Base64SizedEncoder, URLSafeBase64Encode};
 use crate::key_derivation;
 use crate::timed::TimestampSignerImpl;
 use crate::traits::GetSigner;
-use crate::{AsSigner, BadSignature, IntoTimestampSigner, Seperator, Signer};
+use crate::{AsSigner, BadSignature, IntoTimestampSigner, Separator, Signer};
 
 static DEFAULT_SALT: Cow<'static, str> = Cow::Borrowed("itsdangerous.Signer");
 
 pub struct SignerBuilder<Digest, Algorithm, KeyDerivation> {
     secret_key: Cow<'static, str>,
     salt: Cow<'static, str>,
-    seperator: Seperator,
+    separator: Separator,
     _phantom: PhantomData<(Digest, Algorithm, KeyDerivation)>,
 }
 
@@ -45,7 +45,7 @@ where
         Self {
             secret_key: secret_key.into(),
             salt: DEFAULT_SALT.clone(),
-            seperator: Default::default(),
+            separator: Default::default(),
             _phantom: PhantomData,
         }
     }
@@ -57,10 +57,10 @@ where
         self
     }
 
-    /// Uses a specific seperator with the signer. If no seperator is
+    /// Uses a specific separator with the signer. If no separator is
     /// defined, will default to '.'
-    pub fn with_seperator(mut self, seperator: Seperator) -> Self {
-        self.seperator = seperator;
+    pub fn with_separator(mut self, separator: Separator) -> Self {
+        self.separator = separator;
         self
     }
 
@@ -72,7 +72,7 @@ where
 
         SignerImpl {
             derived_key,
-            seperator: self.seperator,
+            separator: self.separator,
             _phantom: PhantomData,
         }
     }
@@ -83,7 +83,7 @@ where
     DerivedKeySize: ArrayLength<u8>,
 {
     derived_key: GenericArray<u8, DerivedKeySize>,
-    pub(crate) seperator: Seperator,
+    pub(crate) separator: Separator,
     _phantom: PhantomData<(Algorithm, SignatureEncoder)>,
 }
 
@@ -142,8 +142,8 @@ where
     }
 
     #[inline(always)]
-    fn seperator(&self) -> Seperator {
-        self.seperator
+    fn separator(&self) -> Separator {
+        self.separator
     }
 
     #[inline(always)]
@@ -155,7 +155,7 @@ where
             String::with_capacity(value.len() + 1 + SignatureEncoder::OutputSize::USIZE);
 
         output.push_str(value);
-        output.push(self.seperator.0);
+        output.push(self.separator.0);
         self.get_signature(value.as_bytes())
             .base64_encode_str(&mut output);
 
@@ -164,7 +164,7 @@ where
 
     #[inline(always)]
     fn unsign<'a>(&'a self, value: &'a str) -> Result<&'a str, BadSignature<'a>> {
-        let (value, signature) = self.seperator.split(&value)?;
+        let (value, signature) = self.separator.split(&value)?;
         if self.verify_encoded_signature(value.as_bytes(), signature.as_bytes()) {
             Ok(value)
         } else {
@@ -239,22 +239,22 @@ mod tests {
     }
 
     #[test]
-    fn test_non_default_seperator() {
+    fn test_non_default_separator() {
         let signer = default_builder("hello")
-            .with_seperator(Seperator::new('!').unwrap())
+            .with_separator(Separator::new('!').unwrap())
             .build();
         let signature = signer.sign("this is a test");
         assert_eq!(signature, "this is a test!hgGT0Zoara4L13FX3_xm-xmfa_0");
     }
 
     #[test]
-    fn test_default_seperator() {
-        assert!(!base64::in_alphabet(Seperator::default().0));
+    fn test_default_separator() {
+        assert!(!base64::in_alphabet(Separator::default().0));
     }
 
     #[test]
-    fn test_seperator_rejects_invalid_char() {
-        assert!(Seperator::new('a').is_err());
+    fn test_separator_rejects_invalid_char() {
+        assert!(Separator::new('a').is_err());
     }
 
     #[test]

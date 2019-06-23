@@ -5,7 +5,7 @@ use typenum::Unsigned;
 
 use crate::algorithm::{Signature, Signer as AlgorithmSigner};
 use crate::error::BadSignature;
-use crate::{BadTimedSignature, Seperator, UnsignedValue};
+use crate::{BadTimedSignature, Separator, UnsignedValue};
 
 /// A signer can sign and unsign bytes, validating the signature provided.
 ///
@@ -44,7 +44,7 @@ pub trait Signer {
     /// [`sign`]: Signer::sign
     fn unsign<'a>(&'a self, value: &'a str) -> Result<&'a str, BadSignature<'a>>;
 
-    fn seperator(&self) -> Seperator;
+    fn separator(&self) -> Separator;
 
     /// Given a base-64 encoded signature, attempt to verify whether or not
     /// it is valid for the given `value`.
@@ -90,7 +90,7 @@ pub trait GetSigner {
 /// assert_eq!(value, "hello world!");
 /// ```
 pub trait TimestampSigner {
-    fn seperator(&self) -> Seperator;
+    fn separator(&self) -> Separator;
 
     /// Signs a value with an arbitrary timestamp.
     fn sign_with_timestamp<S: AsRef<str>>(&self, value: S, timestamp: SystemTime) -> String;

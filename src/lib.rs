@@ -36,7 +36,7 @@
 
 mod base64;
 mod error;
-mod seperator;
+mod separator;
 mod signer;
 mod timed;
 mod timestamp;
@@ -53,9 +53,9 @@ mod serde_serializer;
 mod serializer_traits;
 
 pub use error::{
-    BadSignature, BadTimedSignature, InvalidSeperator, PayloadError, TimestampExpired,
+    BadSignature, BadTimedSignature, InvalidSeparator, PayloadError, TimestampExpired,
 };
-pub use seperator::Seperator;
+pub use separator::Separator;
 pub use signer::{default_builder, SignerBuilder};
 pub use timed::UnsignedValue;
 pub use traits::{AsSigner, IntoTimestampSigner, Signer, TimestampSigner};

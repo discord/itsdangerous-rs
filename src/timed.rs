@@ -5,7 +5,7 @@ use crate::base64::URLSafeBase64Encode;
 use crate::error::BadTimedSignature;
 use crate::timestamp;
 use crate::traits::GetSigner;
-use crate::{AsSigner, Seperator, Signer, TimestampSigner};
+use crate::{AsSigner, Separator, Signer, TimestampSigner};
 
 pub struct TimestampSignerImpl<TSigner>(TSigner);
 
@@ -23,7 +23,7 @@ where
     ) -> Result<(&'a str, &'a str), BadTimedSignature<'a>> {
         // Then we split it again, to extract the value & timestamp.
         self.0
-            .seperator()
+            .separator()
             .split(value)
             .map_err(|_| BadTimedSignature::TimestampMissing { value })
     }
@@ -33,22 +33,22 @@ impl<TSigner> TimestampSigner for TimestampSignerImpl<TSigner>
 where
     TSigner: Signer + GetSigner,
 {
-    fn seperator(&self) -> Seperator {
-        self.0.seperator()
+    fn separator(&self) -> Separator {
+        self.0.separator()
     }
 
     /// Signs a value with an arbitrary timestamp.
     fn sign_with_timestamp<S: AsRef<str>>(&self, value: S, timestamp: SystemTime) -> String {
         let value = value.as_ref();
         let encoded_timestamp = timestamp::encode(timestamp);
-        let seperator = self.0.seperator().0;
+        let separator = self.0.separator().0;
 
         // Generate the signature.
         let signature = self
             .0
             .get_signer()
             .input_chained(value.as_bytes())
-            .input_chained(&[seperator as u8])
+            .input_chained(&[separator as u8])
             .input_chained(encoded_timestamp.as_slice())
             .sign();
 
@@ -58,9 +58,9 @@ where
         );
 
         output.push_str(value);
-        output.push(seperator);
+        output.push(separator);
         output.push_str(encoded_timestamp.as_str());
-        output.push(seperator);
+        output.push(separator);
         signature.base64_encode_str(&mut output);
 
         output
