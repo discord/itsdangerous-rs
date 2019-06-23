@@ -214,7 +214,7 @@ impl<T> Deref for UnsignedTimedSerializerValue<T> {
 }
 
 /// An [`UnverifiedValue`] is just that. A deserialized value that has not been verified against
-/// against a serializer. This is useful if you want to deserialize something without verifying
+/// against a signer. This is useful if you want to deserialize something without verifying
 /// the signature, because you might need data in the unsigned value in order to look up the
 /// signing key in a database somewhere.
 ///
