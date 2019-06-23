@@ -3,6 +3,26 @@ use serde::{de::DeserializeOwned, Serialize};
 use crate::serializer_traits::UnsignToString;
 use crate::{BadSignature, Serializer};
 
+/// The [`MultiSerializer`] provides the ability to sign values with a
+/// given serializer, but also try a series of fallback serializers.
+/// This is useful if you are rotating keys, and want to sign things
+/// using a new key, but allow an old serializer to unsign values.
+///
+/// # Exmaple
+/// ```rust
+/// use itsdangerous::*;
+///
+/// let primary = serializer_with_signer(default_builder("new key").build(), URLSafeEncoding);
+/// let fallback = serializer_with_signer(default_builder("old key").build(), URLSafeEncoding);
+///
+/// let signed_with_new_key = primary.sign(&"Signed with new key".to_owned()).unwrap();
+/// let signed_with_old_key = fallback.sign(&"Signed with old key".to_owned()).unwrap();
+///
+/// let multi = MultiSerializer::new(primary).add_fallback(fallback);
+///
+/// assert_eq!(multi.unsign::<String>(&signed_with_new_key).unwrap(), "Signed with new key");
+/// assert_eq!(multi.unsign::<String>(&signed_with_old_key).unwrap(), "Signed with old key");
+/// ```
 pub struct MultiSerializer<PrimarySerializer> {
     primary_serializer: PrimarySerializer,
     fallback_serializers: Vec<Box<dyn UnsignToString>>,
@@ -12,6 +32,15 @@ impl<PrimarySerializer> MultiSerializer<PrimarySerializer>
 where
     PrimarySerializer: Serializer,
 {
+    /// Constructs a new [`MultiSerializer`] with a given [`Serializer`] as the primary
+    /// serializer. The primary serializer is the one that will be used to sign values,
+    /// and the first serializer that will be attempted while trying to unsign.
+    ///
+    /// # Remarks
+    /// If the primary serializer is used to unsign a value, no dynamic dispatch takes
+    /// place. That is to say, the [`MultiSerializer`] is its fastest when only the
+    /// primary serializer is required to unsign a value, and when signing a value,
+    /// it is a zero-cost abstraction.
     pub fn new(primary_serializer: PrimarySerializer) -> Self {
         Self {
             primary_serializer,
@@ -19,7 +48,15 @@ where
         }
     }
 
-    pub fn add_fallback_serializer<FallbackSerializer>(
+    /// Adds a [`Serializer`] to as a fallback, that will be attempted to be used to
+    /// unsign a value if the primary serializer fails to unsign a value.
+    ///
+    /// # Remarks
+    /// Fallback serializers are attempted in the order they are added. For optimal
+    /// performance when using fallbacks, add them in the order they will probably
+    /// be used. Meaning, if you have a 2 fallbacks, consider adding the one you
+    /// expect to be sucecessful before the other.
+    pub fn add_fallback<FallbackSerializer>(
         mut self,
         fallback_serializer: FallbackSerializer,
     ) -> Self
@@ -75,7 +112,7 @@ mod tests {
         let b = secondary.sign(&"world".to_owned()).unwrap();
         let c = irrelevant.sign(&"danger!".to_owned()).unwrap();
 
-        let multi = MultiSerializer::new(primary).add_fallback_serializer(secondary);
+        let multi = MultiSerializer::new(primary).add_fallback(secondary);
 
         assert_eq!(multi.sign(&"hello".to_owned()).unwrap(), a);
         assert_eq!(multi.unsign::<String>(&a).unwrap(), "hello".to_owned());
