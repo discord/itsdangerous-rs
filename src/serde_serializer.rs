@@ -467,3 +467,27 @@ mod tests {
         );
     }
 }
+
+#[cfg(all(test, feature = "nightly"))]
+mod bench {
+    use crate::*;
+    extern crate test;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_sign(bench: &mut Bencher) {
+        let signer = default_builder("hello world").build();
+        let serializer = serializer_with_signer(signer, NullEncoding);
+
+        let value = vec![1, 2, 3];
+        bench.iter(|| serializer.sign(&value))
+    }
+
+    #[bench]
+    fn bench_unsign(bench: &mut Bencher) {
+        let signer = default_builder("hello world").build();
+        let serializer = serializer_with_signer(signer, NullEncoding);
+        let signed = "[1,2,3].D-AM9g.nHmuOEE3v5DuwHEW9noSBOvExO0";
+        bench.iter(|| serializer.unsign::<Vec<u8>>(&signed))
+    }
+}

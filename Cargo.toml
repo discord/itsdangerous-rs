@@ -16,6 +16,7 @@ description = "Rust port of the popular itsdangerous python library for signing 
 
 [features]
 serializer = ["serde", "serde_json"]
+nightly = []
 
 [package.metadata.docs.rs]
 all-features = true

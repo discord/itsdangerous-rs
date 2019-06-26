@@ -28,8 +28,7 @@
 //!
 //! [`itsdangerous`]: https://github.com/pallets/itsdangerous/
 
-// TODO: Re-enable nightly benchmarks
-// #![feature(test)]
+#![cfg_attr(feature = "nightly", feature(test))]
 
 // TODO: One day un-comment this.
 // #![warn(missing_docs)]
