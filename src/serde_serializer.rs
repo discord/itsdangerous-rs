@@ -24,6 +24,12 @@ pub struct TimedSerializerImpl<TSigner, TEncoding> {
     encoding: TEncoding,
 }
 
+impl<TSigner, TEncoding> TimedSerializerImpl<TSigner, TEncoding> {
+    pub fn signer(&self) -> &TSigner {
+        &self.signer
+    }
+}
+
 pub fn serializer_with_signer<TSigner, TEncoding>(
     signer: TSigner,
     encoding: TEncoding,
@@ -465,6 +471,23 @@ mod tests {
                 .unwrap(),
             vec![1, 2, 3]
         );
+    }
+
+    #[test]
+    fn test_timed_signer_impl_can_be_used_to_verify() {
+        let signer = default_builder("hello world")
+            .build()
+            .into_timestamp_signer();
+        let separator = signer.separator().clone();
+        let serializer = timed_serializer_with_signer(signer, URLSafeEncoding);
+        let signed = serializer.sign(&"whatever").unwrap();
+        let unverified: UnverifiedTimedValue<String> =
+            UnverifiedTimedValue::from_str(separator, URLSafeEncoding, &signed).unwrap();
+        assert_eq!(unverified.unverified_value(), "whatever");
+        let verified = unverified
+            .verify(serializer.signer())
+            .expect("Failed to verify");
+        assert_eq!(&verified.value(), "whatever");
     }
 }
 
