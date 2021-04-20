@@ -265,7 +265,6 @@ mod tests {
         assert!(signer.unsign("w.").is_err());
         assert!(signer.unsign(".w").is_err());
     }
-
 }
 
 #[cfg(all(test, feature = "nightly"))]

@@ -421,7 +421,7 @@ mod tests {
             .into_timestamp_signer();
         let serializer = timed_serializer_with_signer(signer, NullEncoding);
         let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
-        let signed = "[1,2,3].D-AM9g.nHmuOEE3v5DuwHEW9noSBOvExO0";
+        let signed = "[1,2,3].XP57dg.azFnnbv1s1cilwCeXmeVlMmbqD4";
         assert_eq!(
             serializer
                 .sign_with_timestamp(&vec![1, 2, 3], timestamp)
@@ -439,7 +439,7 @@ mod tests {
             .build()
             .into_timestamp_signer();
         let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
-        let signed = "[1,2,3].D-AM9g.nHmuOEE3v5DuwHEW9noSBOvExO0";
+        let signed = "[1,2,3].XP57dg.azFnnbv1s1cilwCeXmeVlMmbqD4";
         let unverified_value: UnverifiedTimedValue<Vec<u8>> =
             UnverifiedTimedValue::from_str(signer.separator(), NullEncoding, signed).unwrap();
         let expected = vec![1, 2, 3];

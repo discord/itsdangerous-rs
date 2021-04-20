@@ -158,7 +158,7 @@ mod tests {
         let timestamp = UNIX_EPOCH + Duration::from_secs(1560181622);
         let signed = signer.sign_with_timestamp("hello world", timestamp);
 
-        assert_eq!(signed, "hello world.D-AM9g.T7AHtE1DsJn4dzUb-oeOwpWWoX8");
+        assert_eq!(signed, "hello world.XP57dg.uBK_KvrfABr48ZHk6IrBINjpqp8");
         let unsigned = signer.unsign(&signed).unwrap();
         assert_eq!(unsigned.value(), "hello world");
         assert_eq!(unsigned.timestamp(), timestamp);
@@ -186,7 +186,6 @@ mod tests {
             .value_if_not_expired(Duration::from_secs(90))
             .is_ok());
     }
-
 }
 
 #[cfg(all(test, feature = "nightly"))]

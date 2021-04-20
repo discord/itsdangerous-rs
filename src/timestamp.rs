@@ -7,8 +7,6 @@ use typenum::{Unsigned, U8};
 use crate::base64::{self, Base64Sized, Base64SizedEncoder};
 use crate::error::BadTimedSignature;
 
-const LEGACY_EPOCH: u64 = 1293840000;
-
 pub(crate) struct EncodedTimestamp<N: ArrayLength<u8>> {
     array: GenericArray<u8, N>,
     length: usize,
@@ -41,8 +39,8 @@ pub(crate) fn encode(
     timestamp: SystemTime,
 ) -> EncodedTimestamp<<TimestampEncoder as Base64Sized>::OutputSize> {
     type InputSize = <TimestampEncoder as Base64Sized>::InputSize;
-    // This is compatible with itsdangerous 0.x, which is what we're using in prod right now.
-    let epoch_delta: u64 = timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs() - LEGACY_EPOCH;
+    // This is compatible with itsdangerous 1.x, which is what we're using in prod right now.
+    let epoch_delta: u64 = timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs();
 
     // Fastest transform + strip + encode in the west.
     // - The nice thing is that this is compile time checked to be a sane transformation, e.g.,
@@ -51,10 +49,7 @@ pub(crate) fn encode(
 
     // We need to strip the leading zero bytes, to do that, we take the leading
     // zeroes, and count em.
-    let zero_index = timestamp_bytes
-        .into_iter()
-        .take_while(|b| **b == 0u8)
-        .count();
+    let zero_index = timestamp_bytes.iter().take_while(|b| **b == 0u8).count();
 
     // Finally, we can do the encoding.
     let mut array = GenericArray::default();
@@ -78,7 +73,7 @@ pub(crate) fn decode(timestamp: &str) -> Result<SystemTime, BadTimedSignature> {
 
     // Finally, take those bytes and re-interpret them
     let timestamp_secs: u64 = unsafe { generic_array::transmute(input_array) };
-    let timestamp_duration = Duration::from_secs(timestamp_secs.to_be() + LEGACY_EPOCH);
+    let timestamp_duration = Duration::from_secs(timestamp_secs.to_be());
 
     // Convert from timestamp to a SystemTime - handle the overflow by returning TimestampInvalid.
     UNIX_EPOCH
