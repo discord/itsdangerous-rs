@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use generic_array::{ArrayLength, GenericArray};
 use hmac::digest::{BlockInput, FixedOutput, Input, Reset};
-use typenum::Unsigned;
+use typenum::{UInt, UTerm, Unsigned, B0, B1};
 
 use crate::algorithm::{self, Signature, Signer as AlgorithmSigner};
 use crate::base64::{self, Base64Sized, Base64SizedEncoder, URLSafeBase64Encode};
@@ -31,9 +31,14 @@ pub fn default_builder<S: Into<Cow<'static, str>>>(
     SignerBuilder::new(secret_key)
 }
 
+type Sha1DigestArray = UInt<UInt<UInt<UInt<UInt<UTerm, B1>, B0>, B1>, B0>, B0>;
+
 /// The default signer built by the builder returned from [`default_builder`].
-pub type DefaultSigner =
-    SignerImpl<sha1::Sha1, algorithm::HMACAlgorithm<sha1::Sha1>, key_derivation::DjangoConcat>;
+pub type DefaultSigner = SignerImpl<
+    algorithm::HMACAlgorithm<sha1::Sha1>,
+    Sha1DigestArray,
+    Base64SizedEncoder<Sha1DigestArray>,
+>;
 
 impl<Digest, Algorithm, KeyDerivation> SignerBuilder<Digest, Algorithm, KeyDerivation>
 where
@@ -224,6 +229,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::DefaultSigner;
     use crate::Signer;
 
     #[test]
@@ -238,6 +244,11 @@ mod tests {
                 .unwrap(),
             "this is a test"
         );
+    }
+
+    #[test]
+    fn test_default_alias() {
+        let _: DefaultSigner = default_builder("hello").build();
     }
 
     #[test]
