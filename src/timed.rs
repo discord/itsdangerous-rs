@@ -153,7 +153,7 @@ impl<'a> UnsignedValue<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{default_builder, IntoTimestampSigner, TimestampSigner};
+    use crate::{default_builder, DefaultTimestampSigner, IntoTimestampSigner, TimestampSigner};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     #[test]
@@ -166,6 +166,11 @@ mod tests {
         let unsigned = signer.unsign(&signed).unwrap();
         assert_eq!(unsigned.value(), "hello world");
         assert_eq!(unsigned.timestamp(), timestamp);
+    }
+
+    #[test]
+    fn test_default_alias() {
+        let _: DefaultTimestampSigner = default_builder("hello").build().into_timestamp_signer();
     }
 
     #[test]
