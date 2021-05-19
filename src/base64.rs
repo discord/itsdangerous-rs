@@ -79,6 +79,15 @@ where
     T: ?Sized + AsRef<[u8]>,
 {
     let mut array = GenericArray::default();
+    let input = input.as_ref();
+    let input_len = input.len();
+    let output_len = array.len();
+    let required_output_len = input_len / 4 * 3;
+    // There are not enough bytes present in the output array to decode this value, meaning it's
+    // too big. We can give up here.
+    if required_output_len > output_len {
+        return Err(DecodeError::InvalidLength);
+    }
     let length = base64::decode_config_slice(input, base64::URL_SAFE_NO_PAD, &mut array)?;
     Ok(DecodeResult { array, length })
 }
