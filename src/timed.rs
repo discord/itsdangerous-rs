@@ -3,11 +3,15 @@ use std::time::{Duration, SystemTime};
 use crate::algorithm::Signer as AlgorithmSigner;
 use crate::base64::URLSafeBase64Encode;
 use crate::error::BadTimedSignature;
+use crate::signer::DefaultSigner;
 use crate::timestamp;
 use crate::traits::GetSigner;
 use crate::{AsSigner, Separator, Signer, TimestampSigner};
 
 pub struct TimestampSignerImpl<TSigner>(TSigner);
+
+/// The default [`TimestampSigner`] when using [`default_builder`].
+pub type DefaultTimestampSigner = TimestampSignerImpl<DefaultSigner>;
 
 impl<TSigner> TimestampSignerImpl<TSigner>
 where

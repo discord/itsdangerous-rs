@@ -31,6 +31,10 @@ pub fn default_builder<S: Into<Cow<'static, str>>>(
     SignerBuilder::new(secret_key)
 }
 
+/// The default signer built by the builder returned from [`default_builder`].
+pub type DefaultSigner =
+    SignerImpl<sha1::Sha1, algorithm::HMACAlgorithm<sha1::Sha1>, key_derivation::DjangoConcat>;
+
 impl<Digest, Algorithm, KeyDerivation> SignerBuilder<Digest, Algorithm, KeyDerivation>
 where
     Digest: Input + BlockInput + FixedOutput + Reset + Default + Clone,
