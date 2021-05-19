@@ -55,8 +55,8 @@ pub use error::{
     BadSignature, BadTimedSignature, InvalidSeparator, PayloadError, TimestampExpired,
 };
 pub use separator::Separator;
-pub use signer::{default_builder, SignerBuilder};
-pub use timed::UnsignedValue;
+pub use signer::{default_builder, DefaultSigner, SignerBuilder};
+pub use timed::{DefaultTimestampSigner, UnsignedValue};
 pub use traits::{AsSigner, IntoTimestampSigner, Signer, TimestampSigner};
 
 #[cfg(feature = "serializer")]
