@@ -1,4 +1,3 @@
-// TODO: Doc these traits.
 use std::time::SystemTime;
 
 use serde::{de::DeserializeOwned, Serialize};
