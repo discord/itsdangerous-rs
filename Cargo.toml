@@ -1,6 +1,6 @@
 [package]
 name = "itsdangerous"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Jake <jh@discordapp.com>"]
 edition = "2018"
 include = [
