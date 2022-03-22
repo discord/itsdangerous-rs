@@ -42,10 +42,26 @@ impl Separator {
         };
         Ok((first, second))
     }
+
+    pub const fn default() -> Self {
+        Self('.')
+    }
 }
 
 impl Default for Separator {
     fn default() -> Self {
-        Self('.')
+        Self::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_const_default() {
+        const SEPARATOR: Separator = Separator::default();
+        let separator: Separator = Default::default();
+        assert_eq!(SEPARATOR, separator);
     }
 }
